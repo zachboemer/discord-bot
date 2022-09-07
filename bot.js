@@ -1,16 +1,57 @@
 // Require the necessary discord.js classes
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, Collection, GatewayIntentBits, ReactionEmoji } = require('discord.js');
+const Sequelize = require('sequelize');
+const { Client, Collection, GatewayIntentBits, } = require('discord.js');
 const { token } = require('./config.json');
 
+///////////////////////////////////////////////////////////////////////////////
+//                            SQL STUFF                                      //
+///////////////////////////////////////////////////////////////////////////////
 
 // Create a new client instance
 const client = new Client({ intents: [
 	GatewayIntentBits.Guilds,
 	GatewayIntentBits.GuildMessages,
-	GatewayIntentBits.MessageContent,]});
+	GatewayIntentBits.MessageContent,
+	GatewayIntentBits.GuildMessageReactions]});
 
+const sequelize = new Sequelize('database', 'user', 'password', {
+	host: 'localhost',
+	dialect: 'sqlite',
+	logging: false,
+	// SQLite only
+	storage: 'database.sqlite',
+});
+
+/*
+ * equivalent to: CREATE TABLE tags(
+ * name VARCHAR(255) UNIQUE,
+ * description TEXT,
+ * username VARCHAR(255),
+ * usage_count  INT NOT NULL DEFAULT 0
+ * );
+ */
+const Tags = sequelize.define('tags', {
+	name: {
+		type: Sequelize.STRING,
+		unique: true,
+	},
+	description: Sequelize.TEXT,
+	username: Sequelize.STRING,
+	usage_count: {
+		type: Sequelize.INTEGER,
+		defaultValue: 0,
+		allowNull: false,
+	},
+});
+
+Tags.sync({ force: true });
+
+
+///////////////////////////////////////////////////////////////////////////////
+//                       LOADS COMMANDS AND EVENTS                           //
+///////////////////////////////////////////////////////////////////////////////
 
 // dynamically loads all the commands
 client.commands = new Collection();
@@ -40,6 +81,10 @@ for (const file of eventFiles) {
 	}
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//                             LOG IN AND LISTEN                             //
+///////////////////////////////////////////////////////////////////////////////
+
 // Login to Discord with your client's token
 client.login(token);
 
@@ -59,5 +104,9 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.on('messageCreate', async message => {
+
+});
+
+client.on('messageReactionAdd', async messageReaction => {
 
 });
